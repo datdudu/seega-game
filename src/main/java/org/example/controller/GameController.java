@@ -1,5 +1,6 @@
 package org.example.controller;
 
+import org.example.common.CommunicationType;
 import org.example.common.PieceType;
 import org.example.communication.*;
 import org.example.gui.BoardPanel;
@@ -19,10 +20,10 @@ public class GameController implements GameCommunicationListener, ChatPanel.Chat
     private PieceType myPieceType;
     private boolean gameStarted;
 
-    public GameController() {
+    public GameController(CommunicationType communicationType) {
         this.board = new Board();
         this.gameWindow = new GameWindow();
-        this.communication = CommunicationFactory.createCommunication(CommunicationFactory.CommunicationType.SOCKET);
+        this.communication = CommunicationFactory.createCommunication(communicationType);
         this.communication.setGameCommunicationListener(this);
         setupGameWindow();
     }
@@ -46,11 +47,7 @@ public class GameController implements GameCommunicationListener, ChatPanel.Chat
 
         gameWindow.getChatPanel().setChatListener(this);
 
-        gameWindow.setSurrenderListener(() -> {
-            if (communication != null) {
-                communication.surrender();
-            }
-        });
+        gameWindow.setSurrenderListener(this::handleSurrender);
 
         gameWindow.setOnCloseHandler(() -> {
             int confirm = JOptionPane.showConfirmDialog(
@@ -172,6 +169,20 @@ public class GameController implements GameCommunicationListener, ChatPanel.Chat
         logEvent("Mensagem recebida do oponente: " + message);
     }
 
+    private void handleSurrender() {
+        if (communication != null) {
+            // Mostra mensagem para quem desistiu
+            gameWindow.showGameOver("Você desistiu, o seu oponente é o vencedor!");
+            logEvent("Você desistiu da partida");
+
+            // Envia a desistência para o servidor
+            communication.surrender();
+
+            // Pequena pausa antes de fechar
+            new Timer(2000, e -> shutdown()).start();
+        }
+    }
+
     @Override
     public void onGameEnd(String reason) {
         logEvent("Fim de jogo: " + reason);
@@ -217,11 +228,19 @@ public class GameController implements GameCommunicationListener, ChatPanel.Chat
         }
 
         if (!opponentHasPieces) {
+            // Envia a vitória por captura para o servidor
+            if (communication != null) {
+                communication.sendEndGame("VICTORY_CAPTURED_ALL");
+            }
             gameWindow.showGameOver("Você venceu! Capturou todas as peças do oponente!");
-            shutdown();
+            new Timer(2000, e -> shutdown()).start();
         } else if (!opponentHasMoves) {
+            // Envia a vitória por falta de movimentos para o servidor
+            if (communication != null) {
+                communication.sendEndGame("VICTORY_NO_MOVES");
+            }
             gameWindow.showGameOver("Você venceu! Oponente sem movimentos válidos!");
-            shutdown();
+            new Timer(2000, e -> shutdown()).start();
         }
     }
 

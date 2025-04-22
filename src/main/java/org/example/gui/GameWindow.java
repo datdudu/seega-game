@@ -103,7 +103,9 @@ public class GameWindow extends JFrame {
     }
 
     public void showGameOver(String message) {
-        JOptionPane.showMessageDialog(this, message, "Fim de Jogo",
+        JOptionPane.showMessageDialog(this,
+                message,
+                "Fim de Jogo",
                 JOptionPane.INFORMATION_MESSAGE);
     }
 }

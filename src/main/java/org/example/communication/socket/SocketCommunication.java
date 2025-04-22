@@ -69,6 +69,11 @@ public class SocketCommunication implements GameCommunication {
     }
 
     @Override
+    public void sendEndGame(String reason) {
+        out.println(NetworkProtocol.createMessage(NetworkProtocol.GAME_END, reason));
+    }
+
+    @Override
     public void setGameCommunicationListener(GameCommunicationListener listener) {
         this.listener = listener;
     }
@@ -107,4 +112,6 @@ public class SocketCommunication implements GameCommunication {
             }
         }
     }
+
+
 }

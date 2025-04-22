@@ -1,12 +1,10 @@
 package org.example.communication;
 
+import org.example.common.CommunicationType;
 import org.example.communication.socket.SocketCommunication;
 
 public class CommunicationFactory {
-    public enum CommunicationType {
-        SOCKET,
-        RPC  // Para futura implementação
-    }
+
 
     public static GameCommunication createCommunication(CommunicationType type) {
         switch (type) {

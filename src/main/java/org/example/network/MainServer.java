@@ -1,5 +1,6 @@
 package org.example.network;
 
+import org.example.common.CommunicationType;
 import org.example.communication.*;
 import org.example.network.NetworkProtocol;
 import org.example.network.socket.SocketGameServer;
@@ -23,9 +24,27 @@ public class MainServer {
     }
 
     public static void main(String[] args) {
+        int port = 12345; // porta padrão
+        CommunicationType serverType = CommunicationType.SOCKET;
+
+        // Se foi fornecida uma porta como argumento, usa ela
+        if (args.length > 0) {
+            try {
+                port = Integer.parseInt(args[0]);
+                if (args.length > 1) {
+                    serverType = CommunicationType.valueOf(args[1]);
+                }
+            } catch (NumberFormatException e) {
+                System.err.println("Porta inválida! Usando porta padrão 12345");
+            } catch (IllegalArgumentException e) {
+                System.err.println("Tipo de servidor inválido! Usando Socket");
+                serverType = CommunicationType.SOCKET;
+            }
+        }
+
         try {
             // Cria o servidor usando a factory
-            GameServerCommunication server = GameServerFactory.createServer(GameServerFactory.ServerType.SOCKET);
+            GameServerCommunication server = GameServerFactory.createServer(serverType);
 
             // Configura o listener do servidor
             server.setServerListener(new GameServerListener() {
@@ -79,23 +98,23 @@ public class MainServer {
                 public void onMessageReceived(String playerId, String command, String data) {
                     System.out.println("Mensagem recebida de " + playerId + ": " + command + " | " + data);
 
-                    // Repassa a mensagem para o outro jogador
-                    for (String otherPlayerId : players.keySet()) {
-                        if (!otherPlayerId.equals(playerId)) {
-                            ((SocketGameServer)server).sendToPlayer(otherPlayerId, command, data);
-                        }
-                    }
-
-                    // Tratamento especial para surrender
-                    if (command.equals(NetworkProtocol.SURRENDER)) {
+                    if (command.equals(NetworkProtocol.GAME_END)) {
+                        handleGameEnd(server, playerId, data);
+                    } else if (command.equals(NetworkProtocol.SURRENDER)) {
                         handleSurrender(server, playerId);
+                    } else {
+                        // Repassa a mensagem para o outro jogador
+                        for (String otherPlayerId : players.keySet()) {
+                            if (!otherPlayerId.equals(playerId)) {
+                                ((SocketGameServer)server).sendToPlayer(otherPlayerId, command, data);
+                            }
+                        }
                     }
                 }
             });
 
-            // Inicia o servidor na porta 12345
-            System.out.println("Iniciando servidor na porta 12345...");
-            server.start(12345);
+            System.out.println("Iniciando servidor na porta " + port + "...");
+            server.start(port);
 
             // Adiciona shutdown hook para parar o servidor graciosamente
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
@@ -122,10 +141,39 @@ public class MainServer {
     private static void handleSurrender(GameServerCommunication server, String surrenderingPlayer) {
         // Notifica todos os jogadores sobre a desistência
         for (String playerId : players.keySet()) {
-            String message = playerId.equals(surrenderingPlayer) ?
-                    "Você desistiu" : "Oponente desistiu";
+            String message;
+            if (playerId.equals(surrenderingPlayer)) {
+                message = "Você desistiu, o seu oponente é o vencedor!";
+            } else {
+                message = "Seu oponente desistiu! Você é o vencedor!";
+            }
+
             ((SocketGameServer)server).sendToPlayer(playerId,
                     NetworkProtocol.GAME_END, message);
+        }
+
+        // Limpa o estado do jogo
+        players.clear();
+        firstPlayerConnected = null;
+    }
+
+    private static void handleGameEnd(GameServerCommunication server, String winningPlayer, String reason) {
+        // Notifica todos os jogadores sobre o fim do jogo
+        for (String playerId : players.keySet()) {
+            String message;
+            if (playerId.equals(winningPlayer)) {
+                // Mensagem para o vencedor (já foi mostrada localmente)
+                continue; // Pula o vencedor pois ele já viu a mensagem
+            } else {
+                // Mensagem para o perdedor
+                if (reason.equals("VICTORY_CAPTURED_ALL")) {
+                    message = "Você perdeu! Todas as suas peças foram capturadas!";
+                } else {
+                    message = "Você perdeu! Não há movimentos válidos disponíveis!";
+                }
+                ((SocketGameServer)server).sendToPlayer(playerId,
+                        NetworkProtocol.GAME_END, message);
+            }
         }
 
         // Limpa o estado do jogo

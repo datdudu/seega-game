@@ -1,12 +1,11 @@
 package org.example.network;
 
 
+import org.example.common.CommunicationType;
 import org.example.network.socket.SocketGameServer;
 
 public class GameServerFactory {
-    public enum ServerType { SOCKET, RPC }
-
-    public static GameServerCommunication createServer(ServerType type) {
+    public static GameServerCommunication createServer(CommunicationType type) {
         switch (type) {
             case SOCKET:
                 return new SocketGameServer();
