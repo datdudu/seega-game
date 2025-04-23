@@ -1,33 +1,34 @@
 package org.example.controller;
 
-
+import org.example.common.CommunicationType;
 import org.example.common.PieceType;
+import org.example.communication.*;
 import org.example.gui.BoardPanel;
 import org.example.gui.ChatPanel;
 import org.example.gui.GameWindow;
 import org.example.model.Board;
 import org.example.model.Piece;
-import org.example.network.GameClient;
 
 import javax.swing.*;
 import java.util.List;
 
-public class GameController implements GameClient.GameClientListener, ChatPanel.ChatListener {
+public class GameController implements GameCommunicationListener, ChatPanel.ChatListener {
     private GameWindow gameWindow;
     private Board board;
-    private GameClient client;
+    private GameCommunication communication;
     private boolean isMyTurn;
     private PieceType myPieceType;
     private boolean gameStarted;
 
-    public GameController() {
+    public GameController(CommunicationType communicationType) {
         this.board = new Board();
         this.gameWindow = new GameWindow();
+        this.communication = CommunicationFactory.createCommunication(communicationType);
+        this.communication.setGameCommunicationListener(this);
         setupGameWindow();
     }
 
     private void setupGameWindow() {
-        // Configura o listener do tabuleiro
         gameWindow.getBoardPanel().setBoardClickListener(new BoardPanel.BoardClickListener() {
             @Override
             public void onMove(int fromRow, int fromCol, int toRow, int toCol) {
@@ -44,17 +45,10 @@ public class GameController implements GameClient.GameClientListener, ChatPanel.
             }
         });
 
-        // Configura o chat
         gameWindow.getChatPanel().setChatListener(this);
 
-        // Configura o botão de desistência
-        gameWindow.setSurrenderListener(() -> {
-            if (client != null) {
-                client.surrender();
-            }
-        });
+        gameWindow.setSurrenderListener(this::handleSurrender);
 
-        // Configura o handler de fechamento
         gameWindow.setOnCloseHandler(() -> {
             int confirm = JOptionPane.showConfirmDialog(
                     gameWindow,
@@ -73,8 +67,8 @@ public class GameController implements GameClient.GameClientListener, ChatPanel.
 
     public void connectToServer(String host, int port) {
         try {
-            client = new GameClient(host, port, this);
-        } catch (Exception e) {
+            communication.connect(host, port);
+        } catch (CommunicationException e) {
             showError("Erro ao conectar: " + e.getMessage());
         }
     }
@@ -86,7 +80,7 @@ public class GameController implements GameClient.GameClientListener, ChatPanel.
     private void makeMove(int fromRow, int fromCol, int toRow, int toCol) {
         if (board.isValidMove(fromRow, fromCol, toRow, toCol, myPieceType)) {
             board.movePiece(fromRow, fromCol, toRow, toCol);
-            client.sendMove(fromRow, fromCol, toRow, toCol);
+            communication.sendMove(fromRow, fromCol, toRow, toCol);
 
             logEvent(String.format("Movimento enviado: (%d,%d) -> (%d,%d)",
                     fromRow, fromCol, toRow, toCol));
@@ -106,14 +100,12 @@ public class GameController implements GameClient.GameClientListener, ChatPanel.
 
     private void placePiece(int row, int col) {
         if (board.placePiece(row, col, myPieceType)) {
-            client.sendMove(-1, -1, row, col);
+            communication.sendMove(-1, -1, row, col);
             logEvent(String.format("Peça colocada em (%d,%d) - Restam %d peças neste turno",
                     row, col, board.getPiecesRemainingThisTurn()));
 
-            // Força atualização visual
             gameWindow.getBoardPanel().updateBoard(board);
 
-            // Verifica se deve mudar o turno
             if (board.shouldChangeTurn()) {
                 isMyTurn = false;
                 board.resetTurnCounter();
@@ -133,24 +125,18 @@ public class GameController implements GameClient.GameClientListener, ChatPanel.
         int toCol = Integer.parseInt(parts[3]);
 
         if (fromRow == -1 && fromCol == -1) {
-            // Colocação de peça na fase de preparação
             board.placePiece(toRow, toCol, getOpponentPieceType());
             logEvent(String.format("Oponente colocou peça em (%d,%d)", toRow, toCol));
 
-            // Força atualização visual
             gameWindow.getBoardPanel().updateBoard(board);
 
-            // Se o oponente colocou duas peças, é sua vez
             if (board.shouldChangeTurn()) {
                 isMyTurn = true;
                 board.resetTurnCounter();
                 logEvent("Sua vez - coloque 2 peças");
             }
         } else {
-            // Movimento normal
             board.movePiece(fromRow, fromCol, toRow, toCol);
-
-            // Força atualização visual
             gameWindow.getBoardPanel().updateBoard(board);
 
             logEvent(String.format("Movimento do oponente: (%d,%d) -> (%d,%d)",
@@ -168,7 +154,6 @@ public class GameController implements GameClient.GameClientListener, ChatPanel.
         updateGameState();
     }
 
-
     @Override
     public void onGameStart(boolean isFirstPlayer) {
         gameStarted = true;
@@ -178,11 +163,24 @@ public class GameController implements GameClient.GameClientListener, ChatPanel.
         updateGameState();
     }
 
-
     @Override
     public void onChatReceived(String message) {
         gameWindow.getChatPanel().addMessage("Oponente: " + message);
         logEvent("Mensagem recebida do oponente: " + message);
+    }
+
+    private void handleSurrender() {
+        if (communication != null) {
+            // Mostra mensagem para quem desistiu
+            gameWindow.showGameOver("Você desistiu, o seu oponente é o vencedor!");
+            logEvent("Você desistiu da partida");
+
+            // Envia a desistência para o servidor
+            communication.surrender();
+
+            // Pequena pausa antes de fechar
+            new Timer(2000, e -> shutdown()).start();
+        }
     }
 
     @Override
@@ -205,8 +203,8 @@ public class GameController implements GameClient.GameClientListener, ChatPanel.
 
     @Override
     public void onMessageSent(String message) {
-        if (client != null) {
-            client.sendChat(message);
+        if (communication != null) {
+            communication.sendChat(message);
             gameWindow.getChatPanel().addMessage("Você: " + message);
             logEvent("Mensagem enviada: " + message);
         }
@@ -217,7 +215,6 @@ public class GameController implements GameClient.GameClientListener, ChatPanel.
         boolean opponentHasPieces = false;
         boolean opponentHasMoves = false;
 
-        // Verifica se o oponente ainda tem peças e movimentos válidos
         for (int row = 0; row < Board.getBoardSize(); row++) {
             for (int col = 0; col < Board.getBoardSize(); col++) {
                 if (board.getPiece(row, col).getType() == opponent) {
@@ -231,19 +228,26 @@ public class GameController implements GameClient.GameClientListener, ChatPanel.
         }
 
         if (!opponentHasPieces) {
+            // Envia a vitória por captura para o servidor
+            if (communication != null) {
+                communication.sendEndGame("VICTORY_CAPTURED_ALL");
+            }
             gameWindow.showGameOver("Você venceu! Capturou todas as peças do oponente!");
-            shutdown();
+            new Timer(2000, e -> shutdown()).start();
         } else if (!opponentHasMoves) {
+            // Envia a vitória por falta de movimentos para o servidor
+            if (communication != null) {
+                communication.sendEndGame("VICTORY_NO_MOVES");
+            }
             gameWindow.showGameOver("Você venceu! Oponente sem movimentos válidos!");
-            shutdown();
+            new Timer(2000, e -> shutdown()).start();
         }
     }
-
 
     private void updateGameState() {
         gameWindow.getBoardPanel().setMyTurn(isMyTurn);
         gameWindow.getBoardPanel().setCurrentPlayer(myPieceType);
-        gameWindow.getBoardPanel().repaint(); // Força atualização visual
+        gameWindow.getBoardPanel().repaint();
 
         String status;
         if (board.isSetupPhase()) {
@@ -265,17 +269,12 @@ public class GameController implements GameClient.GameClientListener, ChatPanel.
     }
 
     public void shutdown() {
-        // Fecha o cliente de rede
-        if (client != null) {
-            client.close();
+        if (communication != null) {
+            communication.disconnect();
         }
-
-        // Fecha a janela
         if (gameWindow != null) {
             gameWindow.dispose();
         }
-
-        // Encerra a aplicação
         System.exit(0);
     }
 

@@ -96,24 +96,31 @@ public class Board {
             return false;
         }
 
-        // Verifica se há peças no caminho
-        if (fromRow == toRow) {
-            int start = Math.min(fromCol, toCol);
-            int end = Math.max(fromCol, toCol);
-            for (int col = start + 1; col < end; col++) {
-                if (pieces[fromRow][col].getType() != PieceType.EMPTY) {
-                    return false;
-                }
-            }
-        } else {
-            int start = Math.min(fromRow, toRow);
-            int end = Math.max(fromRow, toRow);
-            for (int row = start + 1; row < end; row++) {
-                if (pieces[row][fromCol].getType() != PieceType.EMPTY) {
-                    return false;
-                }
-            }
+        // Verifica se o movimento é apenas para uma casa adjacente
+        int rowDiff = Math.abs(toRow - fromRow);
+        int colDiff = Math.abs(toCol - fromCol);
+        if (rowDiff + colDiff != 1) { // Soma deve ser 1 para movimento de uma casa
+            return false;
         }
+
+//        // Verifica se há peças no caminho
+//        if (fromRow == toRow) {
+//            int start = Math.min(fromCol, toCol);
+//            int end = Math.max(fromCol, toCol);
+//            for (int col = start + 1; col < end; col++) {
+//                if (pieces[fromRow][col].getType() != PieceType.EMPTY) {
+//                    return false;
+//                }
+//            }
+//        } else {
+//            int start = Math.min(fromRow, toRow);
+//            int end = Math.max(fromRow, toRow);
+//            for (int row = start + 1; row < end; row++) {
+//                if (pieces[row][fromCol].getType() != PieceType.EMPTY) {
+//                    return false;
+//                }
+//            }
+//        }
 
         return true;
     }
