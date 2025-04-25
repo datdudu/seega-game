@@ -1,4 +1,6 @@
-package org.example.network;
+package org.example.notUsableAnymore;
+
+import org.example.network.NetworkProtocol;
 
 import java.io.BufferedReader;
 import java.io.IOException;

@@ -1,15 +1,20 @@
 package org.example.gui;
 
-
 import javax.swing.*;
 import java.awt.*;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+/**
+ * Painel de log para exibir eventos do jogo com timestamp.
+ */
 public class LogPanel extends JPanel {
-    private JTextArea logArea;
-    private SimpleDateFormat timeFormat;
+    private JTextArea logArea;           // Área de texto para exibir logs
+    private SimpleDateFormat timeFormat; // Formato de hora para timestamp
 
+    /**
+     * Construtor: inicializa componentes e layout.
+     */
     public LogPanel() {
         setLayout(new BorderLayout());
         setBorder(BorderFactory.createTitledBorder("Log de Eventos"));
@@ -26,6 +31,9 @@ public class LogPanel extends JPanel {
         add(scrollPane, BorderLayout.CENTER);
     }
 
+    /**
+     * Adiciona uma mensagem ao log com timestamp.
+     */
     public void addLog(String message) {
         String timestamp = timeFormat.format(new Date());
         SwingUtilities.invokeLater(() -> {
@@ -34,6 +42,9 @@ public class LogPanel extends JPanel {
         });
     }
 
+    /**
+     * Limpa o log.
+     */
     public void clear() {
         logArea.setText("");
     }

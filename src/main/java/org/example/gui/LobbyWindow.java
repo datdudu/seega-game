@@ -6,21 +6,27 @@ import javax.swing.*;
 import java.awt.*;
 import java.net.InetAddress;
 
+/**
+ * Janela de lobby para escolha de modo (hospedar/conectar) e tipo de comunicação.
+ */
 public class LobbyWindow extends JFrame {
-    private Runnable onHostSelected;
-    private Runnable onJoinSelected;
-    private String selectedIP;
-    private int selectedPort;
-    private CommunicationType selectedCommunicationType;
-    private JComboBox<String> communicationTypeCombo;
+    private Runnable onHostSelected;                // Handler para ação de hospedar
+    private Runnable onJoinSelected;                // Handler para ação de conectar
+    private String selectedIP;                      // IP selecionado
+    private int selectedPort;                       // Porta selecionada
+    private CommunicationType selectedCommunicationType; // Tipo de comunicação selecionado
+    private JComboBox<String> communicationTypeCombo;    // ComboBox para seleção do tipo
 
+    /**
+     * Construtor: inicializa e organiza os componentes do lobby.
+     */
     public LobbyWindow() {
         setTitle("Seega - Lobby");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout(10, 10));
         setResizable(false);
 
-        // Painel principal com layout de grade
+        // Painel principal com GridBagLayout
         JPanel mainPanel = new JPanel(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(5, 5, 5, 5);
@@ -58,7 +64,6 @@ public class LobbyWindow extends JFrame {
         gbc.gridy = 3;
         mainPanel.add(joinButton, gbc);
 
-        // Adiciona o painel principal
         add(mainPanel, BorderLayout.CENTER);
 
         // Handler do ComboBox
@@ -87,6 +92,9 @@ public class LobbyWindow extends JFrame {
         setMinimumSize(new Dimension(400, 300));
     }
 
+    /**
+     * Atualiza o tipo de comunicação selecionado.
+     */
     private void updateSelectedCommunicationType() {
         String selected = (String) communicationTypeCombo.getSelectedItem();
         switch (selected) {
@@ -99,11 +107,13 @@ public class LobbyWindow extends JFrame {
         }
     }
 
+    /**
+     * Exibe diálogo para hospedar partida e coleta porta.
+     */
     private void showHostDialog() {
         try {
             String localIP = InetAddress.getLocalHost().getHostAddress();
 
-            // Cria um painel para a porta
             JPanel panel = new JPanel(new GridLayout(0, 1));
             panel.add(new JLabel("Seu IP: " + localIP));
             panel.add(new JLabel("Digite a porta para hospedar:"));
@@ -133,6 +143,9 @@ public class LobbyWindow extends JFrame {
         }
     }
 
+    /**
+     * Exibe diálogo para conectar a uma partida e coleta IP/porta.
+     */
     private void showJoinDialog() {
         JPanel panel = new JPanel(new GridLayout(0, 1));
         panel.add(new JLabel("IP do Host:"));
@@ -160,23 +173,12 @@ public class LobbyWindow extends JFrame {
         }
     }
 
-    public void setOnHostSelected(Runnable callback) {
-        this.onHostSelected = callback;
-    }
+    // Setters para handlers de eventos
+    public void setOnHostSelected(Runnable callback) { this.onHostSelected = callback; }
+    public void setOnJoinSelected(Runnable callback) { this.onJoinSelected = callback; }
 
-    public void setOnJoinSelected(Runnable callback) {
-        this.onJoinSelected = callback;
-    }
-
-    public String getSelectedIP() {
-        return selectedIP;
-    }
-
-    public int getSelectedPort() {
-        return selectedPort;
-    }
-
-    public CommunicationType getSelectedCommunicationType() {
-        return selectedCommunicationType;
-    }
+    // Getters para IP, porta e tipo de comunicação selecionados
+    public String getSelectedIP() { return selectedIP; }
+    public int getSelectedPort() { return selectedPort; }
+    public CommunicationType getSelectedCommunicationType() { return selectedCommunicationType; }
 }

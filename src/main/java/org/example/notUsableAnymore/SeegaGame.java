@@ -1,8 +1,4 @@
-package org.example;
-
-import org.example.controller.GameController;
-
-import javax.swing.*;
+package org.example.notUsableAnymore;
 
 public class SeegaGame {
 //    public static void main(String[] args) {
