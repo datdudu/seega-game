@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+option java_package = "org.example.communication.rpc";
+option java_outer_classname = "SeegaProto";
+
+service SeegaGame {
+  rpc GameStream(stream GameMessage) returns (stream GameMessage);
+}
+
+message GameMessage {
+  string command = 1; // Ex: "MOVE", "CHAT", "GAME_START", etc (use NetworkProtocol)
+  string data = 2;    // Dados associados ao comando (ex: "2,3,2,4" ou mensagem de chat)
+  string playerId = 3; // Opcional: para identificar o remetente
+}

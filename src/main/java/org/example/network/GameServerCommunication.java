@@ -8,4 +8,6 @@ public interface GameServerCommunication {
     void start(int port) throws CommunicationException;
     void stop();
     void setServerListener(GameServerListener listener);
+
+    void sendToPlayer(String playerId, String command, String data);
 }

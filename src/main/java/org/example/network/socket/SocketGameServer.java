@@ -117,6 +117,7 @@ public class SocketGameServer implements GameServerCommunication {
      * @param command Comando a ser enviado
      * @param data Dados do comando
      */
+    @Override
     public void sendToPlayer(String playerId, String command, String data) {
         PrintWriter out = players.get(playerId);
         if (out != null) {
