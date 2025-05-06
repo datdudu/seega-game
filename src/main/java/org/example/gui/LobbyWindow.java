@@ -69,13 +69,13 @@ public class LobbyWindow extends JFrame {
         // Handler do ComboBox
         communicationTypeCombo.addActionListener(e -> {
             String selected = (String) communicationTypeCombo.getSelectedItem();
-            if ("RPC".equals(selected)) {
-                JOptionPane.showMessageDialog(this,
-                        "Comunicação RPC ainda não implementada!",
-                        "Aviso",
-                        JOptionPane.WARNING_MESSAGE);
-                communicationTypeCombo.setSelectedItem("Socket");
-            }
+//            if ("RPC".equals(selected)) {
+//                JOptionPane.showMessageDialog(this,
+//                        "Comunicação RPC ainda não implementada!",
+//                        "Aviso",
+//                        JOptionPane.WARNING_MESSAGE);
+//                communicationTypeCombo.setSelectedItem("Socket");
+//            }
             updateSelectedCommunicationType();
         });
 

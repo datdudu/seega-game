@@ -1,6 +1,7 @@
 package org.example.communication;
 
 import org.example.common.CommunicationType;
+import org.example.communication.rpc.RPCCommunication;
 import org.example.communication.socket.SocketCommunication;
 
 /**
@@ -21,8 +22,8 @@ public class CommunicationFactory {
                 return new SocketCommunication();
             case RPC:
                 // Futuro: implementação para RPC
-                // return new RPCCommunication();
-                throw new UnsupportedOperationException("RPC ainda não implementado");
+                return new RPCCommunication();
+//                throw new UnsupportedOperationException("RPC ainda não implementado");
             default:
                 throw new IllegalArgumentException("Tipo de comunicação não suportado");
         }

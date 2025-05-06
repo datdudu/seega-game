@@ -73,7 +73,7 @@ public class MainServer {
 
                     // Verifica se o servidor já está cheio
                     if (players.size() >= MAX_PLAYERS) {
-                        ((SocketGameServer)server).sendToPlayer(playerId, "ERROR", "Servidor cheio");
+                        server.sendToPlayer(playerId, "ERROR", "Servidor cheio");
                         return;
                     }
 
@@ -107,7 +107,7 @@ public class MainServer {
 
                     // Notifica os jogadores restantes sobre a desconexão
                     for (String remainingPlayer : players.keySet()) {
-                        ((SocketGameServer)server).sendToPlayer(remainingPlayer,
+                        server.sendToPlayer(remainingPlayer,
                                 NetworkProtocol.GAME_END, "Oponente desconectou");
                     }
 
@@ -132,7 +132,7 @@ public class MainServer {
                         // Repassa mensagens normais para o outro jogador
                         for (String otherPlayerId : players.keySet()) {
                             if (!otherPlayerId.equals(playerId)) {
-                                ((SocketGameServer)server).sendToPlayer(otherPlayerId, command, data);
+                                server.sendToPlayer(otherPlayerId, command, data);
                             }
                         }
                     }
@@ -161,7 +161,7 @@ public class MainServer {
     private static void startGame(GameServerCommunication server) {
         for (PlayerInfo player : players.values()) {
             String startMessage = player.isFirstPlayer ? "FIRST" : "SECOND";
-            ((SocketGameServer)server).sendToPlayer(player.id,
+            server.sendToPlayer(player.id,
                     NetworkProtocol.GAME_START, startMessage);
         }
         System.out.println("Jogo iniciado com " + players.size() + " jogadores");
@@ -179,7 +179,7 @@ public class MainServer {
                 message = "Seu oponente desistiu! Você é o vencedor!";
             }
 
-            ((SocketGameServer)server).sendToPlayer(playerId,
+            server.sendToPlayer(playerId,
                     NetworkProtocol.GAME_END, message);
         }
 
@@ -206,7 +206,7 @@ public class MainServer {
                 message = "Você perdeu! Não há movimentos válidos disponíveis!";
             }
 
-            ((SocketGameServer)server).sendToPlayer(playerId,
+            server.sendToPlayer(playerId,
                     NetworkProtocol.GAME_END, message);
         }
 
